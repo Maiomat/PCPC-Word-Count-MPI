@@ -16,6 +16,7 @@ int main( int argc, char *argv[])
     MPI_Status Stat;
     
     double start, end;
+    printf("Sono iniziato\n");
     start = MPI_Wtime();
 
     //Creazione del datatype per il chunk 
