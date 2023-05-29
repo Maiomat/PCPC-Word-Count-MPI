@@ -16,7 +16,7 @@ int main( int argc, char *argv[])
     MPI_Status Stat;
     
     double start, end;
-    printf("Sono iniziato\n");
+
     start = MPI_Wtime();
 
     //Creazione del datatype per il chunk 
@@ -162,7 +162,7 @@ int main( int argc, char *argv[])
         }
 
         char ** entries = (char **) g_hash_table_get_keys_as_array (hash , &length);
-        FILE *out = fopen ("output.txt" , "w");
+        FILE *out = fopen ("words_counted.txt" , "w");
         Word_occurrence * to_order = malloc(sizeof(Word_occurrence) * length);
         for(int i = 0; i<length; i++){
 
@@ -207,7 +207,7 @@ int main( int argc, char *argv[])
     end = MPI_Wtime();
     
     if(rank == 0)
-         printf("Time in ms = %f\n", end-start);
+         printf("Time in second = %f\n", end-start);
     
     return 0;
 }
