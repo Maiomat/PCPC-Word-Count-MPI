@@ -35,4 +35,4 @@ create_build_dir:
 	mkdir -p $(OBJ_DIR)
 
 clean:
-	rm -rf $(OBJ_DIR) word_count.out output.txt
+	rm -rf $(OBJ_DIR) word_count.out output.txt ../*.txt
