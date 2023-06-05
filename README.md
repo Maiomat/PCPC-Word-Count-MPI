@@ -2,6 +2,78 @@
 
 **PCPC-Word-Count-MPI** è un programma che permette di contare le parole di un testo in modo parallelo. Il conteggio delle parole è una pratica comune, soprattutto quando si deve rispettare un limite di parole specifico nel testo. L'implementazione parallela di PCPC-Word-Count-MPI consente di elaborare il testo in modo più rapido utilizzando più processori o nodi di calcolo contemporaneamente. In questo modo, il conteggio delle parole può essere effettuato in modo efficiente anche su testi molto lunghi.
 
+## Esecuzione
+
+Operazioni necessarie per l'esecuzione del programma.
+
+### Requisiti
+
+* Docker
+
+### Installazione
+
+* Ubuntu e OSX:
+  ``` sh
+  docker run -it --mount src="$(pwd)",target=/home type=bind spagnuolocarmine/docker-mpi:latest
+  ```
+* Windows: 
+  ``` sh
+  docker run -it --mount src="%cd%",target=/home,type=bind spagnuolocarmine/docker-mpi:latest
+  ```
+
+Questi comandi servono per avviare il container docker. 
+Una volta avviato è necessario spostarsi nella directory `home/src` ed eseguire lo script `install.sh`. Esempio:
+
+``` sh
+cd home/src
+
+chmod +x install.sh
+./install.sh
+```
+
+Installate le librerie è necessario compilare il progetto tramite il comando:
+
+``` sh
+make all 
+```
+
+### Esecuzione manuale
+
+All'interno della directory **src** utilizzare il comando:
+
+``` 
+mpirun --allow-run-as-root -np <numero_processi> word_count.out <dir>
+```
+
+Esempio:
+
+``` 
+mpirun --allow-run-as-root -np 8 word_count.out ../words
+```
+
+### Esecuzione automatizzata
+
+All'interno della directory principale è possibile utilizzare lo script `autorun.sh`:
+
+``` sh
+chmod +x autorun.sh
+./autorun.sh
+```
+
+File `autorun.sh`:
+``` sh
+echo "Start"
+echo "Start test" > logfile.txt
+for i in {2..24..1}
+do
+  echo "Run with $i processors" >> logfile.txt
+  mpirun -np $i --allow-run-as-root ./src/word_count.out ./words >> logfile.txt
+done
+echo "End"
+```
+
+Sarà possibile visualizzare nel file *logfile.txt* il tempo di esecuzione del programma partendo da 2 processi fino a 24 processi.
+
 ## Analisi del problema
 
 L'obiettivo è implementare un'algoritmo basato su map-reduce utilizzando MPI per risolvere un problema di conteggio delle parole su un gran numero di file.
@@ -32,6 +104,8 @@ L'algoritmo segue i passi successivi:
 8. Infine, il processo MASTER produce un file CSV contenente le frequenze delle parole ordinate, rappresentando il risultato finale del conteggio delle parole.
 
 ## Struttura del progetto
+
+<img src="images/struttura_progetto.png" alt="Struttura del progetto" width = "30%" height = "30%">
 
 - **images**: directory che contiene immagini e file di documentazione
 - **lib**: directory che contiene la libreria mycollective implementata per l'utilizzo di specifici metodi
@@ -247,3 +321,86 @@ void create_chunk_datatype(MPI_Datatype *chunktype){
 Inoltre, è stata presa la decisione di allocare la memoria dinamicamente utilizzando la funzione **MPI_Alloc_mem**, in accordo con la raccomandazione della documentazione che afferma che in alcuni sistemi le operazioni di message-passing e remote-memory-access (RMA) possono beneficiare di prestazioni migliori quando si accede a una memoria appositamente allocata.
 
 Invece di utilizzare l'allocazione di memoria tradizionale come malloc(), è stato scelto di adottare MPI_Alloc_mem per ottenere una memoria appositamente allocata che potrebbe migliorare le prestazioni delle operazioni di comunicazione nel contesto MPI.
+
+## Correttezza del programma
+
+Per verificare la correttezza del programma, è stato creato lo script `correctness.sh`. 
+Esso esegue l'algoritmo partendo da 2 processi e terminando con 100 processi, generando due file `words_counted.txt` e `twoprocess.txt`. Se non ci sono differenze tra i due output allora l'algoritmo funziona correttamente.
+
+## Benchmarking
+
+I test per la valutazione della scalabilità, sia forte che debole, sono stati eseguiti su un cluster di 6 macchine in Google Cloud. Le macchine utilizzate erano di tipo e2-standard-4, con 4 vCPU e 16GB di RAM ciascuna.
+
+Di seguito sono riportati i dati relativi alla scalabilità forte e alla scalabilità debole:
+
+## Scalabilita debole
+
+Per ottenere i seguenti dati, è stato deciso di aumentare la dimensione dell'input di 24 Mb ogni volta che veniva aggiunto un processore. Inoltre, i dati riportati sono la media di tre esecuzioni per ciascuna variazione del numero di processori.
+
+| Numero di slave | Dimensione input (Mb) | Tempo di esecuzione |
+|-----------------|-----------------------|---------------------|
+| 1               | 24                    | 1.871s              |
+| 2               | 48                    | 2.101s              |
+| 3               | 72                    | 2.183s              |
+| 4               | 96                    | 2.214s              |
+| 5               | 120                   | 2.296s              |
+| 6               | 144                   | 2.304s              | 
+| 7               | 168                   | 2.285s              |
+| 8               | 192                   | 2.319s              |
+| 9               | 216                   | 2.352s              |
+| 10              | 240                   | 2.369s              |
+| 11              | 264                   | 2.380s              |
+| 12              | 288                   | 2.377s              |
+| 13              | 312                   | 2.383s              |
+| 14              | 336                   | 2.379s              |
+| 15              | 360                   | 2.391s              |
+| 16              | 384                   | 2.412s              |
+| 17              | 408                   | 2.426s              |
+| 18              | 432                   | 2.479s              |
+| 19              | 456                   | 2.471s              |
+| 20              | 480                   | 2.528s              |
+| 21              | 504                   | 2.454s              |
+| 22              | 528                   | 2.408s              |
+| 23              | 552                   | 2.412s              |
+
+<img src="images/ScalabilitàDebole.png" alt="scalabilità debole" width = "50%" height = "50%">
+
+## Scalabilità forte
+
+Fissato un input di 552Mb, è stato possibile ricavare i seguenti dati. I dati riportati sono la media di tre esecuzioni per ciascuna variazione del numero di processori.
+
+| Numero di slave | Speed-up | Tempo di esecuzione |
+|-----------------|----------|---------------------|
+| 1               | 1        | 39.908s             |
+| 2               | 1.39     | 28.278s             |
+| 3               | 1.92     | 20.220s             |
+| 4               | 2.28     | 16.729s             |
+| 5               | 2.94     | 12.541s             |
+| 6               | 3.05     | 10.277s             | 
+| 7               | 3.71     | 8.954s              |
+| 8               | 4.28     | 8.319s              |
+| 9               | 4.88     | 7.205s              |
+| 10              | 5.47     | 6.769s              |
+| 11              | 6.04     | 5.782s              |
+| 12              | 6.82     | 5.227s              |
+| 13              | 7.11     | 4.546s              |
+| 14              | 7.79     | 4.238s              |
+| 15              | 8.41     | 4.119s              |
+| 16              | 8.99     | 3.823s              |
+| 17              | 9.51     | 3.676s              |
+| 18              | 10.08    | 3.529s              |
+| 19              | 10.84    | 3.457s              |
+| 20              | 11.27    | 3.771s              |
+| 21              | 12.05    | 3.173s              |
+| 22              | 12.88    | 2.911s              |
+| 23              | 13.21    | 2.824s              |
+
+<img src="images/ScalabilitàForte.png" alt="scalabilità forte" width = "50%" height = "50%">
+
+## Conclusioni e considerazioni
+
+Gli speed-up calcolati e presenti nella tabella mostrano un'influenza negativa dovuta al fatto che il master non lavora su nessuna porzione dei file nell'implementazione attuale. Si potrebbe modificare l'implementazione in modo che il master conservi una parte del lavoro per sé stesso durante la suddivisione migliorando notevolmente le prestazioni.
+
+L'analisi del grafico sulla scalabilità forte mostra un miglioramento dei tempi di esecuzione all'aumentare dei processi utilizzati. Il miglioramento è più significativo durante i primi incrementi dei processori. Tuttavia, da 14 a 23 processori, le prestazioni si stabilizzano e tendono a peggiorare. Ciò è dovuto all'aumento della potenza di calcolo e alla suddivisione più piccola dei file, ma l'overhead delle comunicazioni tra i processori riduce le prestazioni complessive.
+
+Per quanto riguarda la scalabilità debole, i dati mostrano che il tempo di esecuzione rimane costante al variare del numero di processori per una dimensione fissa del problema per processore. Questo suggerisce una suddivisione equa dei dati in input tra i processori.
