@@ -132,7 +132,7 @@ Nel contesto del programma, una parola è definita come una sequenza di caratter
 
 ## Aspetti pratici dell'implementazione
 
-### Gestione partizone dei File
+### Gestione partizione dei File
 
 Il MASTER ottenuti i File, li divide in partizioni chiamati chunk.
 Per ottenere la dimensione in byte di ogni file viene utilizzata la seguente istruzione:
