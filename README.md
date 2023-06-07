@@ -14,11 +14,11 @@ Operazioni necessarie per l'esecuzione del programma.
 
 * Ubuntu e OSX:
   ``` sh
-  docker run -it --mount src="$(pwd)",target=/home type=bind spagnuolocarmine/docker-mpi:latest
+  docker run --rm -it --name mpi-container --mount src="$(pwd)",target=/home,type=bind spagnuolocarmine/docker-mpi:latest
   ```
 * Windows: 
   ``` sh
-  docker run -it --mount src="%cd%",target=/home,type=bind spagnuolocarmine/docker-mpi:latest
+  docker run --rm -it --name mpi-container --mount src="%cd%",target=/home,type=bind spagnuolocarmine/docker-mpi:latest
   ```
 
 Questi comandi servono per avviare il container docker. 
